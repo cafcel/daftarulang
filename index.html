@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar Ulang - SDN Mujahidin 05 Malang</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Inter & Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- html2pdf.js CDN untuk fitur download PDF langsung -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+        }
+        .step-transition {
+            transition: all 0.3s ease-in-out;
+        }
+        /* Style khusus untuk cetak bukti PDF pendaftaran */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+            }
+            nav, footer, main, #modal-detail-siswa, #modal-admin-auth, #toast-container, .no-print {
+                display: none !important;
+            }
+            #printable-receipt {
+                display: block !important;
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-emerald-800 text-white shadow-md sticky top-0 z-50 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-white p-1.5 rounded-lg shadow-md flex items-center justify-center w-12 h-12">
+                        <img src="Screenshot_20240820_144005_Canva.png" alt="Logo SDN Mujahidin 5" class="w-10 h-10 object-contain">
+                    </div>
+                    <div>
+                        <span class="font-extrabold text-base sm:text-lg tracking-tight block">SDN MUJAHIDIN 05</span>
+                        <span class="text-xs text-emerald-100 block -mt-1 font-medium">Kota Malang</span>
+                    </div>
+                </div>
+                <!-- Role/Section Switcher -->
+                <div class="flex space-x-2">
+                    <button id="btn-portal-wali" onclick="switchPortal('wali')" class="px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-700 text-white hover:bg-emerald-600 transition shadow flex items-center gap-2">
+                        <i class="fa-solid fa-user-pen"></i> <span class="hidden sm:inline">Portal Wali Murid</span>
+                    </button>
+                    <button id="btn-portal-admin" onclick="openAdminAuth()" class="px-4 py-2 rounded-lg text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-slate-900 transition shadow flex items-center gap-2">
+                        <i class="fa-solid fa-user-shield"></i> <span class="hidden sm:inline">Administrasi</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 no-print">
+        
+        <!-- PORTAL WALI MURID (FORM DAFTAR ULANG & CEK STATUS) -->
+        <section id="portal-wali" class="space-y-6">
+            <!-- Hero Banner -->
+            <div class="bg-gradient-to-r from-emerald-800 to-teal-700 rounded-2xl p-6 sm:p-10 text-white shadow-lg relative overflow-hidden">
+                <div class="absolute right-0 bottom-0 opacity-10 transform translate-x-10 translate-y-10">
+                    <i class="fa-solid fa-graduation-cap text-[200px]"></i>
+                </div>
+                <div class="relative z-10 max-w-2xl">
+                    <span class="bg-emerald-500/30 text-emerald-200 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Tahun Ajaran 2026/2027</span>
+                    <h1 class="text-2xl sm:text-4xl font-extrabold mt-3 tracking-tight">Daftar Ulang Siswa Baru</h1>
+                    <p class="text-sm sm:text-base text-emerald-100 mt-2 font-medium leading-relaxed">
+                        Selamat datang wali murid baru SDN Mujahidin 05 Malang. Silakan lakukan pengisian formulir daftar ulang atau cek status konfirmasi pendaftaran putra-putri Anda.
+                    </p>
+                    <div class="mt-6 flex flex-wrap gap-3">
+                        <button onclick="toggleWaliView('daftar')" id="tab-daftar-baru" class="px-5 py-2.5 rounded-lg text-xs font-bold bg-white text-emerald-950 shadow-md hover:bg-emerald-50 transition flex items-center gap-2">
+                            <i class="fa-solid fa-user-plus"></i> Isi Formulir Baru
+                        </button>
+                        <button onclick="toggleWaliView('konfirmasi')" id="tab-cek-status" class="px-5 py-2.5 rounded-lg text-xs font-bold bg-emerald-900/40 border border-emerald-500 text-emerald-100 hover:bg-emerald-900/60 transition flex items-center gap-2">
+                            <i class="fa-solid fa-magnifying-glass"></i> Cek Status Konfirmasi
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 1: REGISTRATION WIZARD -->
+            <div id="wali-daftar-view" class="space-y-6">
+                <!-- Multi-step Wizard Progress Header -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-100 p-6">
+                    <div class="flex items-center justify-between max-w-3xl mx-auto">
+                        <!-- Step 1 -->
+                        <div class="flex flex-col items-center flex-1 relative" id="step-node-1">
+                            <div class="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold shadow-md z-10 step-node">1</div>
+                            <span class="text-xs sm:text-sm font-semibold mt-2 text-emerald-800">Data Siswa</span>
+                        </div>
+                        <!-- Line 1-2 -->
+                        <div class="h-1 bg-emerald-200 flex-1 -mt-6 z-0" id="step-line-1"></div>
+                        <!-- Step 2 -->
+                        <div class="flex flex-col items-center flex-1 relative" id="step-node-2">
+                            <div class="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold z-10 step-node">2</div>
+                            <span class="text-xs sm:text-sm font-medium mt-2 text-slate-500">Data Wali Murid</span>
+                        </div>
+                        <!-- Line 2-3 -->
+                        <div class="h-1 bg-slate-200 flex-1 -mt-6 z-0" id="step-line-2"></div>
+                        <!-- Step 3 -->
+                        <div class="flex flex-col items-center flex-1 relative" id="step-node-3">
+                            <div class="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold z-10 step-node">3</div>
+                            <span class="text-xs sm:text-sm font-medium mt-2 text-slate-500">Unggah & Kirim</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Card -->
+                <form id="form-daftar-ulang" class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 sm:p-8 space-y-6">
+                    
+                    <!-- STEP 1: DATA SISWA -->
+                    <div id="step-content-1" class="step-content space-y-6">
+                        <h3 class="text-lg font-bold text-slate-900 border-b pb-2 flex items-center gap-2">
+                            <span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg text-sm"><i class="fa-solid fa-child"></i></span> Identitas Calon Siswa
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Nama Lengkap Siswa <span class="text-red-500">*</span></label>
+                                <input type="text" id="siswa_nama" required class="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition" placeholder="Sesuai Akta Kelahiran">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Jenis Kelamin <span class="text-red-500">*</span></label>
+                                <select id="siswa_jk" required class="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition bg-white">
+                                    <option value="">Pilih Jenis Kelamin</option>
+                                    <option value="Laki-laki">Laki-laki</option>
+                                    <option value="Perempuan">Perempuan</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Tempat Lahir <span class="text-red-500">*</span></label>
+                                <input type="text" id="siswa_tempat_lahir" required class="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition" placeholder="Contoh: Malang">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Tanggal Lahir <span class="text-red-500">*</span></label>
+                                <input type="date" id="siswa_tanggal_lahir" required class="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Jumlah Saudara Kandung</label>
+                                <input type="number" id="siswa_saudara" min="0" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition" placeholder="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 2: DATA ORANG TUA / WALI -->
+                    <div id="step-content-2" class="step-content hidden space-y-6">
+                        <h3 class="text-lg font-bold text-slate-900 border-b pb-2 flex items-center gap-2">
+                            <span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg text-sm"><i class="fa-solid fa-people-roof"></i></span> Data Orang Tua / Wali
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Nama Lengkap Ayah Kandung <span class="text-red-500">*</span></label>
+                                <input type="text" id="wali_ayah" required class="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition" placeholder="Nama Ayah">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Pekerjaan Ayah <span class="text-red-500">*</span></label>
+                                <input type="text" id="wali_ayah_pekerjaan" required class="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition" placeholder="Pekerjaan Ayah">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Nama Lengkap Ibu Kandung <span class="text-red-500">*</span></label>
+                                <input type="text" id="wali_ibu" required class="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition" placeholder="Nama Ibu">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Pekerjaan Ibu <span class="text-red-500">*</span></label>
+                                <input type="text" id="wali_ibu_pekerjaan" required class="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition" placeholder="Pekerjaan Ibu">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">No. WhatsApp/Telepon Aktif <span class="text-red-500">*</span></label>
+                                <input type="tel" id="wali_hp" required class="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition" placeholder="Contoh: 081234567890">
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">Alamat Rumah Lengkap <span class="text-red-500">*</span></label>
+                                <textarea id="wali_alamat" required rows="3" class="w-full rounded-lg border border-slate-300 px-4 py-2.5 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition" placeholder="Nama jalan, No. Rumah, RT/RW, Kelurahan, Kecamatan, Kota/Kabupaten"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STEP 3: UNGGAH & KIRIM -->
+                    <div id="step-content-3" class="step-content hidden space-y-6">
+                        <h3 class="text-lg font-bold text-slate-900 border-b pb-2 flex items-center gap-2">
+                            <span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-lg text-sm"><i class="fa-solid fa-file-arrow-up"></i></span> Kelengkapan Dokumen (Gambar)
+                        </h3>
+                        <p class="text-xs text-slate-500 -mt-2">Silakan unggah foto dokumen KK dan Akta asli dalam format JPG/PNG untuk verifikasi berkas langsung di panel admin.</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Dokumen 1: Kartu Keluarga -->
+                            <div class="border border-dashed border-slate-300 rounded-xl p-5 bg-slate-50 hover:bg-slate-100/50 transition relative">
+                                <div class="flex items-center space-x-4">
+                                    <div class="p-3 bg-red-100 text-red-600 rounded-lg text-xl"><i class="fa-regular fa-image"></i></div>
+                                    <div class="flex-grow">
+                                        <h4 class="font-semibold text-sm text-slate-900">Kartu Keluarga (KK) <span class="text-red-500">*</span></h4>
+                                        <p class="text-xs text-slate-500" id="kk-status">Belum ada foto terpilih</p>
+                                    </div>
+                                    <label class="bg-white border hover:bg-slate-50 text-slate-700 text-xs font-semibold py-2 px-3 rounded-lg shadow-sm cursor-pointer transition">
+                                        Pilih Berkas
+                                        <input type="file" id="upload_kk" accept="image/jpeg,image/png,image/jpg" class="hidden" onchange="compressAndStoreFile('upload_kk', 'kk-status', 'kk_base64_val')">
+                                    </label>
+                                </div>
+                                <input type="hidden" id="kk_base64_val">
+                            </div>
+
+                            <!-- Dokumen 2: Akta Kelahiran -->
+                            <div class="border border-dashed border-slate-300 rounded-xl p-5 bg-slate-50 hover:bg-slate-100/50 transition relative">
+                                <div class="flex items-center space-x-4">
+                                    <div class="p-3 bg-blue-100 text-blue-600 rounded-lg text-xl"><i class="fa-regular fa-image"></i></div>
+                                    <div class="flex-grow">
+                                        <h4 class="font-semibold text-sm text-slate-900">Akta Kelahiran Siswa <span class="text-red-500">*</span></h4>
+                                        <p class="text-xs text-slate-500" id="akta-status">Belum ada foto terpilih</p>
+                                    </div>
+                                    <label class="bg-white border hover:bg-slate-50 text-slate-700 text-xs font-semibold py-2 px-3 rounded-lg shadow-sm cursor-pointer transition">
+                                        Pilih Berkas
+                                        <input type="file" id="upload_akta" accept="image/jpeg,image/png,image/jpg" class="hidden" onchange="compressAndStoreFile('upload_akta', 'akta-status', 'akta_base64_val')">
+                                    </label>
+                                </div>
+                                <input type="hidden" id="akta_base64_val">
+                            </div>
+                        </div>
+
+                        <!-- Pernyataan / Disclaimer -->
+                        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start space-x-3">
+                            <div class="text-amber-600 mt-0.5"><i class="fa-solid fa-circle-exclamation text-lg"></i></div>
+                            <div>
+                                <h4 class="font-bold text-sm text-amber-950">Pernyataan Pertanggungjawaban</h4>
+                                <p class="text-xs text-amber-900 mt-1 leading-relaxed">
+                                    Saya menyatakan dengan sesungguhnya bahwa semua data dan dokumen yang saya isikan dalam formulir pendaftaran ini adalah benar, sah, dan sesuai dengan dokumen aslinya.
+                                </p>
+                                <label class="flex items-center space-x-2 mt-3 cursor-pointer select-none">
+                                    <input type="checkbox" id="persetujuan_wali" required class="w-4.5 h-4.5 text-emerald-600 border-slate-300 rounded focus:ring-emerald-500">
+                                    <span class="text-xs font-bold text-emerald-950">Saya menyetujui pernyataan di atas <span class="text-red-500">*</span></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Wizard Actions Buttons -->
+                    <div class="flex justify-between items-center border-t pt-6">
+                        <button type="button" id="btn-back" onclick="changeStep(-1)" class="px-5 py-2.5 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition hidden">
+                            Kembali
+                        </button>
+                        <div class="flex-grow"></div>
+                        <button type="button" id="btn-next" onclick="changeStep(1)" class="px-6 py-2.5 text-sm font-semibold text-white bg-emerald-700 hover:bg-emerald-600 rounded-lg shadow-md transition flex items-center gap-2">
+                            <span>Lanjut ke Langkah Berikutnya</span> <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                        <button type="submit" id="btn-submit-form" class="px-6 py-2.5 text-sm font-semibold text-white bg-emerald-800 hover:bg-emerald-700 rounded-lg shadow-md transition flex items-center gap-2 hidden">
+                            <i class="fa-solid fa-cloud-arrow-up"></i> Kirim Pendaftaran
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Success Registration State -->
+                <div id="success-card" class="bg-white rounded-xl shadow-md border border-slate-100 p-8 text-center max-w-2xl mx-auto hidden space-y-6">
+                    <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner animate-bounce">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-slate-900">Daftar Ulang Berhasil Terkirim!</h2>
+                        <p class="text-slate-500 mt-2">Pendaftaran putra-putri Anda telah tersimpan. Silakan simpan / cetak Bukti PDF untuk berkas pendaftaran fisik di sekolah.</p>
+                    </div>
+
+                    <div class="bg-slate-50 rounded-xl p-5 text-left border border-slate-100 space-y-3">
+                        <div class="flex justify-between border-b pb-2"><span class="text-xs text-slate-500 font-medium">No. Registrasi:</span> <span class="text-xs font-bold text-emerald-700" id="res-no">REG-2026-X</span></div>
+                        <div class="flex justify-between border-b pb-2"><span class="text-xs text-slate-500 font-medium">Nama Lengkap Siswa:</span> <span class="text-xs font-bold text-slate-900" id="res-nama">-</span></div>
+                        <div class="flex justify-between border-b pb-2"><span class="text-xs text-slate-500 font-medium">Wali Murid:</span> <span class="text-xs font-bold text-slate-900" id="res-wali">-</span></div>
+                        <div class="flex justify-between"><span class="text-xs text-slate-500 font-medium">Status Berkas:</span> <span class="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">Menunggu Verifikasi</span></div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                        <button onclick="triggerPrintReceipt()" class="px-5 py-2.5 text-sm font-semibold bg-emerald-800 hover:bg-emerald-700 text-white rounded-lg transition shadow flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-file-pdf"></i> Cetak Bukti PDF
+                        </button>
+                        <button onclick="resetRegistrationForm()" class="px-5 py-2.5 text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-rotate"></i> Daftarkan Siswa Lain
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: LIHAT KONFIRMASI (CHECK STATUS) -->
+            <div id="wali-konfirmasi-view" class="bg-white rounded-xl shadow-sm border border-slate-100 p-6 sm:p-8 space-y-6 hidden">
+                <div class="max-w-md mx-auto text-center space-y-4">
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-full flex items-center justify-center text-xl mx-auto"><i class="fa-solid fa-magnifying-glass"></i></div>
+                    <h3 class="font-bold text-slate-900 text-lg">Cek Status Konfirmasi Berkas</h3>
+                    <p class="text-xs text-slate-500">Masukkan Nomor Registrasi yang Anda peroleh setelah menyelesaikan pendaftaran formulir di atas.</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="lookup-reg-id" class="w-full text-center font-bold tracking-wider rounded-lg border border-slate-300 px-4 py-2.5 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition" placeholder="REG-YYYYMMDD-XXXX">
+                        <button onclick="searchRegistrationStatus()" class="bg-emerald-800 hover:bg-emerald-700 text-white px-5 rounded-lg text-sm font-bold shadow transition flex items-center gap-1">Cari</button>
+                    </div>
+                </div>
+
+                <!-- Hasil Pencarian -->
+                <div id="lookup-result-card" class="max-w-2xl mx-auto bg-slate-50 border border-slate-100 rounded-xl p-6 hidden space-y-4">
+                    <div class="flex justify-between items-center border-b pb-3">
+                        <h4 class="font-bold text-slate-900 text-sm">Hasil Konfirmasi Pendaftaran</h4>
+                        <span id="lookup-status-badge" class="px-2.5 py-1 rounded-full text-xs font-semibold">Status</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <span class="text-slate-400 font-medium">Nama Calon Siswa:</span>
+                            <p class="font-bold text-slate-900" id="lookup-view-nama">-</p>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 font-medium">Jenis Kelamin:</span>
+                            <p class="font-bold text-slate-900" id="lookup-view-jk">-</p>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 font-medium">Wali Murid / Ayah:</span>
+                            <p class="font-bold text-slate-900" id="lookup-view-wali">-</p>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 font-medium">Waktu Daftar:</span>
+                            <p class="font-bold text-slate-900" id="lookup-view-tgl">-</p>
+                        </div>
+                    </div>
+                    <div class="border-t pt-4 flex justify-end gap-2">
+                        <button id="lookup-btn-print" onclick="triggerPrintReceipt()" class="px-4 py-2 text-xs font-bold bg-emerald-800 hover:bg-emerald-700 text-white rounded-lg shadow transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-file-pdf"></i> Cetak Bukti PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PORTAL ADMINISTRASI (ADMIN DASHBOARD) -->
+        <section id="portal-admin" class="hidden space-y-6">
+            <!-- Admin Header -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex items-center space-x-4">
+                    <!-- Foto Profil Admin Dinamis -->
+                    <div class="relative">
+                        <img id="admin-avatar-img" src="https://placehold.co/100x100/065f46/ffffff?text=Admin" class="w-14 h-14 rounded-full border-2 border-emerald-500 shadow-md object-cover" alt="Avatar Admin">
+                        <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full animate-pulse"></span>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold bg-amber-100 text-amber-800 px-3 py-0.5 rounded-full uppercase tracking-wider">PANEL ADMINISTRATOR</span>
+                        <h1 class="text-xl font-extrabold text-slate-900 mt-1" id="active-admin-name">Admin Name</h1>
+                        <p class="text-xs text-slate-500">Merapel data pangkalan kode: <span id="active-admin-code" class="font-bold text-emerald-800">0125</span></p>
+                    </div>
+                </div>
+                <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+                    <button onclick="exportToCSV()" class="px-4 py-2.5 rounded-lg text-sm font-semibold bg-emerald-700 hover:bg-emerald-600 text-white transition shadow flex items-center justify-center gap-2 flex-grow sm:flex-grow-0">
+                        <i class="fa-solid fa-file-excel"></i> Ekspor CSV / Excel
+                    </button>
+                    <button onclick="switchPortal('wali')" class="px-4 py-2.5 rounded-lg text-sm font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition flex items-center justify-center gap-2 flex-grow sm:flex-grow-0">
+                        <i class="fa-solid fa-arrow-left"></i> Kembali ke Form
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Dashboard Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Stat 1 -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                    <div class="p-4 bg-emerald-100 text-emerald-800 rounded-lg text-2xl"><i class="fa-solid fa-user-graduate"></i></div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Pendaftar</p>
+                        <h3 class="text-2xl font-black text-slate-900" id="stat-total">0</h3>
+                    </div>
+                </div>
+                <!-- Stat 2 -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                    <div class="p-4 bg-blue-100 text-blue-800 rounded-lg text-2xl"><i class="fa-solid fa-mars"></i></div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Laki-Laki</p>
+                        <h3 class="text-2xl font-black text-slate-900" id="stat-l">0</h3>
+                    </div>
+                </div>
+                <!-- Stat 3 -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                    <div class="p-4 bg-pink-100 text-pink-800 rounded-lg text-2xl"><i class="fa-solid fa-venus"></i></div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Perempuan</p>
+                        <h3 class="text-2xl font-black text-slate-900" id="stat-p">0</h3>
+                    </div>
+                </div>
+                <!-- Stat 4 -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 flex items-center space-x-4">
+                    <div class="p-4 bg-amber-100 text-amber-800 rounded-lg text-2xl"><i class="fa-solid fa-hourglass-half"></i></div>
+                    <div>
+                        <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Belum Verifikasi</p>
+                        <h3 class="text-2xl font-black text-slate-900" id="stat-pending">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Controls -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <!-- Search Input -->
+                    <div class="relative flex-grow max-w-md">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                        </span>
+                        <input type="text" id="admin-search" oninput="applyFilters()" class="w-full pl-10 pr-4 py-2 text-sm rounded-lg border border-slate-300 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition" placeholder="Cari nama siswa atau orang tua...">
+                    </div>
+                    <!-- Filters -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <select id="admin-filter-jk" onchange="applyFilters()" class="px-3 py-2 text-sm rounded-lg border border-slate-300 focus:border-emerald-500 outline-none bg-white">
+                            <option value="">Semua Jenis Kelamin</option>
+                            <option value="Laki-laki">Laki-laki</option>
+                            <option value="Perempuan">Perempuan</option>
+                        </select>
+                        <select id="admin-filter-status" onchange="applyFilters()" class="px-3 py-2 text-sm rounded-lg border border-slate-300 focus:border-emerald-500 outline-none bg-white">
+                            <option value="">Semua Status</option>
+                            <option value="Pending">Menunggu Verifikasi</option>
+                            <option value="Lengkap">Berkas Lengkap</option>
+                            <option value="Perbaikan">Butuh Perbaikan</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Admin Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-600 font-semibold text-xs border-b border-slate-100">
+                            <tr>
+                                <th class="py-4 px-6">ID Registrasi</th>
+                                <th class="py-4 px-6">Nama Siswa</th>
+                                <th class="py-4 px-6">Kontak Wali</th>
+                                <th class="py-4 px-6">Tanggal Daftar</th>
+                                <th class="py-4 px-6 text-center">Status</th>
+                                <th class="py-4 px-6 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-registrations-body" class="divide-y divide-slate-100 text-slate-700">
+                            <tr>
+                                <td colspan="6" class="text-center py-12 text-slate-400">
+                                    <div class="flex flex-col items-center space-y-2">
+                                        <i class="fa-solid fa-database text-3xl animate-pulse text-slate-300"></i>
+                                        <p class="text-xs">Sedang memuat data dari cloud server...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL POPUP: AUTHENTICATION ADMIN -->
+    <div id="modal-admin-auth" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 no-print">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 m-4 space-y-4 transform scale-95 transition-all duration-300">
+            <div class="flex justify-between items-start">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-emerald-100 text-emerald-800 p-2.5 rounded-lg text-lg"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div>
+                        <h3 class="font-extrabold text-slate-900">Masuk Administrasi</h3>
+                        <p class="text-xs text-slate-500">Silakan masukkan akun panitia Anda.</p>
+                    </div>
+                </div>
+                <button onclick="closeAdminAuth()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Username <span class="text-red-500">*</span></label>
+                    <input type="text" id="admin-username-input" class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition text-sm" placeholder="Contoh: Admin01muhrizal">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password <span class="text-red-500">*</span></label>
+                    <input type="password" id="admin-password-input" class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition text-sm" placeholder="••••••••">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kode Sekolah <span class="text-red-500">*</span></label>
+                    <input type="text" id="admin-kodesekolah-input" class="w-full rounded-lg border border-slate-300 px-4 py-2 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition text-sm" placeholder="4 Digit Kode Sekolah">
+                </div>
+                <button onclick="verifyAdminCredentials()" class="w-full py-2.5 bg-emerald-800 hover:bg-emerald-700 text-white font-bold rounded-lg shadow transition text-sm">Masuk Panel Administrasi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL POPUP: DETAIL SISWA -->
+    <div id="modal-detail-siswa" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 overflow-y-auto py-10 no-print">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 sm:p-8 m-4 space-y-6 transform scale-95 transition-all duration-300 my-auto">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-start border-b pb-4">
+                <div class="flex items-center space-x-3">
+                    <div class="bg-emerald-100 text-emerald-800 p-2.5 rounded-lg text-xl"><i class="fa-solid fa-user-graduate"></i></div>
+                    <div>
+                        <h3 class="font-black text-lg text-slate-900" id="detail-header-nama">Nama Siswa</h3>
+                        <p class="text-xs text-slate-500">ID Pendaftaran: <span id="detail-header-reg" class="font-bold text-emerald-700">REG-</span></p>
+                    </div>
+                </div>
+                <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <!-- Modal Content Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Kolom Kiri: Data Siswa -->
+                <div class="space-y-4">
+                    <h4 class="font-bold text-sm text-slate-900 border-b pb-1.5 flex items-center gap-1.5"><i class="fa-solid fa-id-card text-emerald-700"></i> Informasi Siswa</h4>
+                    <div class="grid grid-cols-3 gap-2 text-xs font-medium">
+                        <span class="text-slate-400">Gender:</span>
+                        <span class="col-span-2 font-bold text-slate-850" id="detail-jk">-</span>
+                        <span class="text-slate-400">TTL:</span>
+                        <span class="col-span-2 font-bold text-slate-850" id="detail-ttl">-</span>
+                        <span class="text-slate-400">Saudara:</span>
+                        <span class="col-span-2 font-bold text-slate-850" id="detail-saudara">-</span>
+                    </div>
+                </div>
+
+                <!-- Kolom Kanan: Data Wali -->
+                <div class="space-y-4">
+                    <h4 class="font-bold text-sm text-slate-900 border-b pb-1.5 flex items-center gap-1.5"><i class="fa-solid fa-people-roof text-emerald-700"></i> Informasi Orang Tua / Wali</h4>
+                    <div class="grid grid-cols-3 gap-2 text-xs font-medium">
+                        <span class="text-slate-400">Ayah Kandung:</span>
+                        <span class="col-span-2 font-bold text-slate-850" id="detail-ayah">-</span>
+                        <span class="text-slate-400">Pekerjaan Ayah:</span>
+                        <span class="col-span-2 font-bold text-slate-850" id="detail-pekerjaan-ayah">-</span>
+                        <span class="text-slate-400">Ibu Kandung:</span>
+                        <span class="col-span-2 font-bold text-slate-850" id="detail-ibu">-</span>
+                        <span class="text-slate-400">Pekerjaan Ibu:</span>
+                        <span class="col-span-2 font-bold text-slate-850" id="detail-pekerjaan-ibu">-</span>
+                        <span class="text-slate-400">No. HP Wali:</span>
+                        <span class="col-span-2 font-bold text-emerald-800" id="detail-hp">-</span>
+                        <span class="text-slate-400">Alamat:</span>
+                        <span class="col-span-2 font-bold text-slate-850 leading-relaxed" id="detail-alamat">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bagian: Tinjauan Berkas Unggulan -->
+            <div class="space-y-3">
+                <h4 class="font-bold text-sm text-slate-900 border-b pb-1.5 flex items-center gap-1.5"><i class="fa-solid fa-file-shield text-emerald-700"></i> Berkas Pendukung yang Diunggah</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="border rounded-xl p-4 bg-slate-50 flex items-center justify-between">
+                        <div>
+                            <span class="text-xs text-slate-400 block font-medium">Foto Kartu Keluarga (KK)</span>
+                            <span class="text-xs font-bold text-slate-800" id="detail-kk-filename">kk_document.jpg</span>
+                        </div>
+                        <button onclick="previewFileFromDetails('kk')" class="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-xs font-bold rounded-lg transition flex items-center gap-1">
+                            <i class="fa-solid fa-image"></i> Tinjau Foto
+                        </button>
+                    </div>
+                    <div class="border rounded-xl p-4 bg-slate-50 flex items-center justify-between">
+                        <div>
+                            <span class="text-xs text-slate-400 block font-medium">Foto Akta Kelahiran</span>
+                            <span class="text-xs font-bold text-slate-800" id="detail-akta-filename">akta_document.jpg</span>
+                        </div>
+                        <button onclick="previewFileFromDetails('akta')" class="px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-xs font-bold rounded-lg transition flex items-center gap-1">
+                            <i class="fa-solid fa-image"></i> Tinjau Foto
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Berkas & Status Administrasi -->
+            <div class="bg-slate-50 rounded-xl p-5 border border-slate-100 space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h4 class="font-bold text-sm text-slate-900">Validasi Berkas & Status Administratif</h4>
+                        <p class="text-xs text-slate-500">Tentukan status kelayakan berkas pendaftaran calon siswa.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-100" id="detail-label-status">Status: Pending</span>
+                    </div>
+                </div>
+
+                <!-- Status Update Buttons -->
+                <div class="flex flex-wrap gap-2 pt-2 border-t">
+                    <button onclick="updateStatusRegistration('Lengkap')" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs rounded-lg shadow transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-check"></i> Nyatakan Berkas Lengkap
+                    </button>
+                    <button onclick="updateStatusRegistration('Perbaikan')" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold text-xs rounded-lg shadow transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Butuh Perbaikan Dokumen
+                    </button>
+                    <button onclick="updateStatusRegistration('Pending')" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs rounded-lg transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-spinner"></i> Kembalikan ke Antrean (Pending)
+                    </button>
+                    <div class="flex-grow"></div>
+                    <button onclick="deleteRegistration()" class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 font-bold text-xs rounded-lg transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-trash-can"></i> Hapus Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PREVIEW IMAGE MODAL OVERLAY -->
+    <div id="modal-preview-file" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[60] flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 no-print">
+        <div class="bg-white rounded-2xl overflow-hidden max-w-2xl w-full mx-4 shadow-2xl flex flex-col max-h-[85vh] transform scale-95 transition-all duration-300">
+            <div class="p-4 border-b flex justify-between items-center bg-slate-50">
+                <h3 class="font-extrabold text-slate-900 text-sm" id="preview-file-title">Tinjau Foto Dokumen</h3>
+                <button onclick="closePreviewFileModal()" class="text-slate-500 hover:text-slate-800"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-6 bg-slate-900 flex justify-center items-center flex-grow overflow-y-auto min-h-[300px]">
+                <img id="preview-file-img" src="" class="max-w-full max-h-[60vh] rounded shadow-lg object-contain" alt="Preview Dokumen">
+            </div>
+            <div class="p-3 bg-slate-50 border-t flex justify-end">
+                <button onclick="closePreviewFileModal()" class="px-4 py-2 bg-slate-200 text-slate-800 text-xs font-bold rounded-lg transition hover:bg-slate-300">Tutup Tinjauan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GLOBAL LOADING OVERLAY (DENGAN ANIMASI) -->
+    <div id="loading-overlay" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] flex flex-col items-center justify-center opacity-0 pointer-events-none transition-all duration-350 no-print">
+        <div class="text-center space-y-6 max-w-xs">
+            <div class="relative w-20 h-20 mx-auto">
+                <!-- Inner spinner -->
+                <div class="absolute inset-0 rounded-full border-4 border-emerald-500/30"></div>
+                <div class="absolute inset-0 rounded-full border-4 border-t-emerald-500 border-r-emerald-500 animate-spin"></div>
+                <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center">
+                    <img src="Screenshot_20240820_144005_Canva.png" alt="Logo SDN Mujahidin 5" class="w-full h-full object-contain">
+                </div>
+            </div>
+            <div class="space-y-2">
+                <h3 class="font-extrabold text-white text-lg tracking-wide" id="loading-overlay-title">Sedang Menghubungkan...</h3>
+                <p class="text-xs text-emerald-200" id="loading-overlay-sub">Membuka pangkalan data SDN Mujahidin 05</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION POPUP PANEL -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-[90] flex flex-col space-y-2 pointer-events-none max-w-sm w-full no-print"></div>
+
+    <!-- Footer -->
+    <footer class="bg-slate-100 border-t border-slate-200 py-6 text-center text-xs text-slate-500 no-print">
+        <div class="max-w-7xl mx-auto px-4">
+            <p>© 2026 SDN Mujahidin 05 Malang. Hak Cipta Dilindungi Undang-Undang.</p>
+            <p class="mt-1">Kec. Kedungkandang, Kota Malang, Jawa Timur</p>
+        </div>
+    </footer>
+
+    <!-- PRE-STYLED PRINTABLE RECEIPT TEMPLATE (FOR PDF EXPORT) -->
+    <div id="printable-receipt" class="hidden font-serif leading-relaxed text-black bg-white p-8">
+        <!-- Header Kop Surat -->
+        <div class="flex items-center justify-between border-b-4 border-double border-black pb-4">
+            <div class="w-24 flex items-center justify-center">
+                <img src="Screenshot_20240820_144005_Canva.png" alt="Logo SDN Mujahidin 5" class="w-20 h-20 object-contain">
+            </div>
+            <div class="text-center flex-grow">
+                <h2 class="text-xl font-bold tracking-tight uppercase">Yayasan Pendidikan Islam Mujahidin</h2>
+                <h1 class="text-2xl font-black tracking-wide uppercase">SDN MUJAHIDIN 05 MALANG</h1>
+                <p class="text-xs font-medium">Jl. Ki Ageng Gribig No. 05, Madyopuro, Kec. Kedungkandang, Kota Malang, Jawa Timur</p>
+                <p class="text-xs italic font-medium">Email: sdnmujahidin05@malangkota.go.id | Telepon: (0341) 745812</p>
+            </div>
+            <div class="w-20 text-right">
+                <!-- Barcode hiasan untuk estetika surat resmi -->
+                <div class="inline-block border p-1 text-center font-mono text-[8px] uppercase">
+                    <i class="fa-solid fa-barcode text-3xl block"></i>
+                    SDNMJH05
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center my-6 space-y-1">
+            <h3 class="text-lg font-bold underline uppercase">TANDA BUKTI DAFTAR ULANG</h3>
+            <p class="text-sm font-semibold">Tahun Ajaran 2026/2027</p>
+            <p class="text-xs">Nomor Registrasi: <span class="font-mono font-bold" id="print-reg-id">REG-XXXXXXXXXX</span></p>
+        </div>
+
+        <p class="text-sm mb-4">Panitia Penerimaan Peserta Didik Baru (PPDB) SDN Mujahidin 05 Malang menyatakan bahwa calon siswa di bawah ini telah terdaftar dalam sistem administrasi:</p>
+
+        <!-- Tabel Data Siswa & Wali -->
+        <table class="w-full text-left text-xs border-collapse border border-slate-800 mb-6 font-sans">
+            <tbody>
+                <tr class="bg-slate-100">
+                    <th colspan="2" class="border border-slate-800 p-2 font-bold uppercase tracking-wider text-[10px]">I. IDENTITAS CALON SISWA</th>
+                </tr>
+                <tr>
+                    <td class="border border-slate-800 p-2 w-1/3">Nama Lengkap Siswa</td>
+                    <td class="border border-slate-800 p-2 font-bold" id="print-siswa-nama">-</td>
+                </tr>
+                <tr>
+                    <td class="border border-slate-800 p-2">Jenis Kelamin</td>
+                    <td class="border border-slate-800 p-2" id="print-siswa-jk">-</td>
+                </tr>
+                <tr>
+                    <td class="border border-slate-800 p-2">Tempat, Tanggal Lahir</td>
+                    <td class="border border-slate-800 p-2" id="print-siswa-ttl">-</td>
+                </tr>
+                <tr>
+                    <td class="border border-slate-800 p-2">Jumlah Saudara</td>
+                    <td class="border border-slate-800 p-2" id="print-siswa-saudara">-</td>
+                </tr>
+                <tr class="bg-slate-100">
+                    <th colspan="2" class="border border-slate-800 p-2 font-bold uppercase tracking-wider text-[10px]">II. IDENTITAS ORANG TUA / WALI</th>
+                </tr>
+                <tr>
+                    <td class="border border-slate-800 p-2">Nama Ayah Kandung</td>
+                    <td class="border border-slate-800 p-2 font-bold" id="print-wali-ayah">-</td>
+                </tr>
+                <tr>
+                    <td class="border border-slate-800 p-2">Pekerjaan Ayah</td>
+                    <td class="border border-slate-800 p-2" id="print-wali-ayah-pekerjaan">-</td>
+                </tr>
+                <tr>
+                    <td class="border border-slate-800 p-2">Nama Ibu Kandung</td>
+                    <td class="border border-slate-800 p-2 font-bold" id="print-wali-ibu">-</td>
+                </tr>
+                <tr>
+                    <td class="border border-slate-800 p-2">Pekerjaan Ibu</td>
+                    <td class="border border-slate-800 p-2" id="print-wali-ibu-pekerjaan">-</td>
+                </tr>
+                <tr>
+                    <td class="border border-slate-800 p-2">No. HP / WhatsApp Wali</td>
+                    <td class="border border-slate-800 p-2 font-bold" id="print-wali-hp">-</td>
+                </tr>
+                <tr>
+                    <td class="border border-slate-800 p-2">Alamat Lengkap Rumah</td>
+                    <td class="border border-slate-800 p-2 leading-relaxed" id="print-wali-alamat">-</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="bg-slate-50 border border-slate-400 rounded p-3 text-xs mb-6 leading-relaxed font-sans">
+            <span class="font-bold block text-[10px] uppercase mb-1">PENTING & CATATAN PERSIAPAN SEKOLAH:</span>
+            <ul class="list-decimal pl-4 space-y-1">
+                <li>Bawa lembar cetak pendaftaran ini saat melakukan verifikasi langsung di sekolah.</li>
+                <li>Lampirkan fotokopi Kartu Keluarga (KK) dan Akta Kelahiran asli yang telah diunggah di web.</li>
+                <li>Menghadiri jadwal daftar ulang di sekolah sesuai pengumuman yang didistribusikan via grup WA Panitia.</li>
+            </ul>
+        </div>
+
+        <!-- Tanda Tangan & Pengesahan -->
+        <div class="grid grid-cols-2 gap-8 text-xs font-sans mt-12">
+            <div class="text-center">
+                <p>Wali Murid Calon Siswa,</p>
+                <div class="h-20"></div>
+                <p class="font-bold underline" id="print-sign-wali">( ........................................ )</p>
+            </div>
+            <div class="text-center relative">
+                <p>Malang, <span id="print-current-date">07 Juni 2026</span></p>
+                <p>Panitia PPDB SDN Mujahidin 05,</p>
+                
+                <!-- Stempel Sekolah (Simulasi dekoratif) -->
+                <div class="absolute right-12 top-6 border-4 border-double border-emerald-800/40 text-emerald-800/40 font-bold p-1 rounded-full text-[10px] rotate-12 select-none pointer-events-none uppercase">
+                    <div class="border border-emerald-800/30 p-1.5 rounded-full flex flex-col items-center">
+                        <span>MUJAHIDIN</span>
+                        <span class="text-[8px] font-normal">SDN 05 MALANG</span>
+                    </div>
+                </div>
+
+                <div class="h-20"></div>
+                <p class="font-bold underline">PANITIA DAFTAR ULANG</p>
+                <p class="text-[10px] text-slate-500">NIP. PPDB202605</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase & Application Module -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Application State configuration
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'sdn-mujahidin-05';
+        const defaultFirebaseConfig = {
+            apiKey: "AIzaSyDummyKeyForFallbackPurpose",
+            authDomain: "sdn-mujahidin-05.firebaseapp.com",
+            projectId: "sdn-mujahidin-05",
+            storageBucket: "sdn-mujahidin-05.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:1234567890:web:abcdef123456"
+        };
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : defaultFirebaseConfig;
+
+        // Initialize Firebase SDK instances
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // State variables
+        let currentUserId = null;
+        let registrationDataList = [];
+        let activeFilterJk = "";
+        let activeFilterStatus = "";
+        let activeSearchQuery = "";
+        let selectedDetailDocId = null;
+        let currentActiveAdmin = null;
+
+        const adminAccounts = [
+            { username: "Admin01muhrizal", password: "adm1n01muhr1z4l", kodeSekolah: "0125", image: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=120" },
+            { username: "Admin02afcel", password: "adm1n024fcel", kodeSekolah: "0126", image: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=120" },
+            { username: "Admin03dinda", password: "adm1n03d1nd4", kodeSekolah: "0127", image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=120" }
+        ];
+
+        // Step Controller State
+        let currentStep = 1;
+
+        // Setup safe Firestore path according to mandatory RULE 1
+        const registrationsCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'registrations');
+
+        // Initialize authentication (Rule 3)
+        async function authenticateUser() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.warn("Auth initialization custom failed, attempting anonymous fallback:", err);
+                try {
+                    await signInAnonymously(auth);
+                } catch (fallbackErr) {
+                    showToast("Sistem mengalami kegagalan otentikasi. Silakan periksa koneksi internet Anda.", "error");
+                }
+            }
+        }
+
+        // Listen for Auth changes
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                // Once authenticated, load cloud data
+                listenToCloudData();
+            } else {
+                currentUserId = null;
+            }
+        });
+
+        // Real-time listener function with strict error boundary
+        function listenToCloudData() {
+            if (!currentUserId) return;
+
+            // Rule 2: Fetch all with a simple collection query, then filter/sort in memory
+            const q = query(registrationsCollectionRef);
+
+            onSnapshot(q, (snapshot) => {
+                registrationDataList = [];
+                snapshot.forEach((doc) => {
+                    registrationDataList.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                // Sort by date descending in JavaScript memory
+                registrationDataList.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                // Redraw statistical values
+                updateStatistics();
+                // Redraw table
+                renderTable();
+                
+                // If detailed modal is open, refresh detail views as well
+                if (selectedDetailDocId) {
+                    const matched = registrationDataList.find(item => item.id === selectedDetailDocId);
+                    if (matched) {
+                        populateDetailModal(matched);
+                    } else {
+                        closeDetailModal();
+                    }
+                }
+            }, (error) => {
+                console.error("Firebase Snapshot Error: ", error);
+                showToast("Gagal menyinkronkan data dari cloud server.", "error");
+            });
+        }
+
+        // Compress image file to keep Firestore document size within safe limits (<100KB)
+        window.compressAndStoreFile = function(inputId, statusId, hiddenInputId) {
+            const fileInput = document.getElementById(inputId);
+            const statusLabel = document.getElementById(statusId);
+            const hiddenValInput = document.getElementById(hiddenInputId);
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                statusLabel.innerHTML = `<span class="text-slate-500">Belum ada berkas terpilih</span>`;
+                hiddenValInput.value = "";
+                return;
+            }
+
+            const file = fileInput.files[0];
+            statusLabel.innerHTML = `<span class="text-amber-600 font-semibold"><i class="fa-solid fa-spinner animate-spin"></i> Mempersiapkan file...</span>`;
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = function(event) {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 500;
+                    const MAX_HEIGHT = 650;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Compress JPEG representation to 60% quality
+                    const base64Str = canvas.toDataURL('image/jpeg', 0.6);
+                    hiddenValInput.value = base64Str;
+                    statusLabel.innerHTML = `<span class="text-emerald-600 font-bold"><i class="fa-solid fa-circle-check"></i> Siap diunggah (${(base64Str.length / 1024).toFixed(1)} KB)</span>`;
+                };
+            };
+            reader.onerror = function() {
+                statusLabel.innerHTML = `<span class="text-red-600 font-semibold">Gagal memproses file</span>`;
+                hiddenValInput.value = "";
+            };
+        }
+
+        // Change Form steps
+        window.changeStep = function(offset) {
+            const currentStepEl = document.getElementById(`step-content-${currentStep}`);
+            
+            // Validation check before going forward
+            if (offset > 0) {
+                const inputs = currentStepEl.querySelectorAll('input[required], select[required], textarea[required]');
+                let isValid = true;
+                inputs.forEach(input => {
+                    if (!input.value) {
+                        isValid = false;
+                        input.classList.add('border-red-500');
+                    } else {
+                        input.classList.remove('border-red-500');
+                    }
+                });
+
+                if (!isValid) {
+                    showToast("Mohon lengkapi semua bidang wajib sebelum melanjutkan.", "warning");
+                    return;
+                }
+            }
+
+            // Hide active step
+            currentStepEl.classList.add('hidden');
+            
+            // Apply offset
+            currentStep += offset;
+            
+            // Show next/prev step
+            const nextStepEl = document.getElementById(`step-content-${currentStep}`);
+            nextStepEl.classList.remove('hidden');
+
+            // Update Progress UI nodes
+            updateProgressWizardUI();
+        }
+
+        // Update indicators on progress
+        function updateProgressWizardUI() {
+            for (let i = 1; i <= 3; i++) {
+                const node = document.getElementById(`step-node-${i}`).querySelector('.step-node');
+                const text = document.getElementById(`step-node-${i}`).querySelector('span');
+                const line = document.getElementById(`step-line-${i}`);
+
+                if (i < currentStep) {
+                    // Completed step
+                    node.className = "w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold shadow z-10 step-node";
+                    node.innerHTML = '<i class="fa-solid fa-check text-xs"></i>';
+                    text.className = "text-xs sm:text-sm font-semibold mt-2 text-emerald-800";
+                    if (line) line.className = "h-1 bg-emerald-600 flex-1 -mt-6 z-0";
+                } else if (i === currentStep) {
+                    // Active step
+                    node.className = "w-10 h-10 rounded-full bg-emerald-600 ring-4 ring-emerald-100 text-white flex items-center justify-center font-bold shadow-md z-10 step-node";
+                    node.innerHTML = i;
+                    text.className = "text-xs sm:text-sm font-bold mt-2 text-emerald-800";
+                    if (line) line.className = "h-1 bg-slate-200 flex-1 -mt-6 z-0";
+                } else {
+                    // Upcoming step
+                    node.className = "w-10 h-10 rounded-full bg-slate-100 text-slate-500 border flex items-center justify-center font-semibold z-10 step-node";
+                    node.innerHTML = i;
+                    text.className = "text-xs sm:text-sm font-medium mt-2 text-slate-400";
+                    if (line) line.className = "h-1 bg-slate-200 flex-1 -mt-6 z-0";
+                }
+            }
+
+            // Show/Hide step action buttons
+            const btnBack = document.getElementById('btn-back');
+            const btnNext = document.getElementById('btn-next');
+            const btnSubmit = document.getElementById('btn-submit-form');
+
+            if (currentStep === 1) {
+                btnBack.classList.add('hidden');
+                btnNext.classList.remove('hidden');
+                btnSubmit.classList.add('hidden');
+                btnNext.querySelector('span').innerText = "Lanjut ke Data Wali";
+            } else if (currentStep === 2) {
+                btnBack.classList.remove('hidden');
+                btnNext.classList.remove('hidden');
+                btnSubmit.classList.add('hidden');
+                btnNext.querySelector('span').innerText = "Lanjut ke Unggah Berkas";
+            } else if (currentStep === 3) {
+                btnBack.classList.remove('hidden');
+                btnNext.classList.add('hidden');
+                btnSubmit.classList.remove('hidden');
+            }
+        }
+
+        // Toggle Wali view between Form and Confirmation lookup
+        window.toggleWaliView = function(view) {
+            const formView = document.getElementById('wali-daftar-view');
+            const konfirmasiView = document.getElementById('wali-konfirmasi-view');
+            const tabDaftar = document.getElementById('tab-daftar-baru');
+            const tabCek = document.getElementById('tab-cek-status');
+
+            if (view === 'daftar') {
+                formView.classList.remove('hidden');
+                konfirmasiView.classList.add('hidden');
+                
+                tabDaftar.className = "px-5 py-2.5 rounded-lg text-xs font-bold bg-white text-emerald-950 shadow-md hover:bg-emerald-50 transition flex items-center gap-2";
+                tabCek.className = "px-5 py-2.5 rounded-lg text-xs font-bold bg-emerald-900/40 border border-emerald-500 text-emerald-100 hover:bg-emerald-900/60 transition flex items-center gap-2";
+            } else {
+                formView.classList.add('hidden');
+                konfirmasiView.classList.remove('hidden');
+                
+                tabDaftar.className = "px-5 py-2.5 rounded-lg text-xs font-bold bg-emerald-900/40 border border-emerald-500 text-emerald-100 hover:bg-emerald-900/60 transition flex items-center gap-2";
+                tabCek.className = "px-5 py-2.5 rounded-lg text-xs font-bold bg-white text-emerald-950 shadow-md hover:bg-emerald-50 transition flex items-center gap-2";
+            }
+        }
+
+        // Search registration status based on Reg ID
+        window.searchRegistrationStatus = function() {
+            const inputId = document.getElementById('lookup-reg-id').value.trim();
+            const resultCard = document.getElementById('lookup-result-card');
+            
+            if (!inputId) {
+                showToast("Silakan isi nomor registrasi Anda terlebih dahulu.", "warning");
+                return;
+            }
+
+            const matched = registrationDataList.find(item => item.regId === inputId);
+
+            if (!matched) {
+                resultCard.classList.add('hidden');
+                showToast("Nomor registrasi tidak ditemukan. Periksa kembali penulisan nomor Anda.", "error");
+                return;
+            }
+
+            // Populate UI lookup results
+            document.getElementById('lookup-view-nama').innerText = matched.siswaNama;
+            document.getElementById('lookup-view-jk').innerText = matched.siswaJk;
+            document.getElementById('lookup-view-wali').innerText = matched.waliAyah;
+            document.getElementById('lookup-view-tgl').innerText = new Date(matched.createdAt).toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }) + " WIB";
+
+            // Style lookup badge depending on status
+            const badge = document.getElementById('lookup-status-badge');
+            if (matched.status === 'Lengkap') {
+                badge.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200";
+                badge.innerText = "Berkas Lengkap";
+            } else if (matched.status === 'Perbaikan') {
+                badge.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-850 border border-amber-200";
+                badge.innerText = "Butuh Perbaikan Dokumen";
+            } else {
+                badge.className = "px-2.5 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-200";
+                badge.innerText = "Menunggu Verifikasi";
+            }
+
+            // Pre-load current item as printable source target
+            window.activePrintTarget = matched;
+
+            resultCard.classList.remove('hidden');
+            showToast("Data pendaftaran berhasil ditemukan!", "success");
+        }
+
+        // Submit Re-registration Form
+        const formEl = document.getElementById('form-daftar-ulang');
+        formEl.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Guard Auth
+            if (!currentUserId) {
+                showToast("Sesi pendaftaran belum diotorisasi. Silakan periksa jaringan internet Anda.", "error");
+                return;
+            }
+
+            const kkBase64 = document.getElementById('kk_base64_val').value;
+            const aktaBase64 = document.getElementById('akta_base64_val').value;
+            const agreeCheck = document.getElementById('persetujuan_wali');
+
+            if (!kkBase64 || !aktaBase64) {
+                showToast("Mohon pilih dan proses dokumen KK serta Akta Kelahiran Anda terlebih dahulu.", "warning");
+                return;
+            }
+
+            if (!agreeCheck.checked) {
+                showToast("Anda harus menyetujui pernyataan pertanggungjawaban data.", "warning");
+                return;
+            }
+
+            // Build dynamic ID
+            const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const randHex = Math.random().toString(16).substring(2, 6).toUpperCase();
+            const documentId = `REG-${dateStr}-${randHex}`;
+
+            // Structuring data submission model (Islamic context: no Agama, NIK, or NISN)
+            const registrationDoc = {
+                regId: documentId,
+                siswaNama: documentRefine('siswa_nama'),
+                siswaJk: documentRefine('siswa_jk'),
+                siswaTempatLahir: documentRefine('siswa_tempat_lahir'),
+                siswaTanggalLahir: documentRefine('siswa_tanggal_lahir'),
+                siswaSaudara: documentRefine('siswa_saudara') || 0,
+                waliAyah: documentRefine('wali_ayah'),
+                waliAyahPekerjaan: documentRefine('wali_ayah_pekerjaan'),
+                waliIbu: documentRefine('wali_ibu'),
+                waliIbuPekerjaan: documentRefine('wali_ibu_pekerjaan'),
+                waliHp: documentRefine('wali_hp'),
+                waliAlamat: documentRefine('wali_alamat'),
+                kkFilename: document.getElementById('upload_kk').files[0].name,
+                aktaFilename: document.getElementById('upload_akta').files[0].name,
+                kkImageBase64: kkBase64,       // Actual image source compressed stored inline
+                aktaImageBase64: aktaBase64,   // Actual image source compressed stored inline
+                status: 'Pending',
+                createdAt: new Date().toISOString(),
+                registeredBy: currentUserId
+            };
+
+            // Loading state
+            const submitBtn = document.getElementById('btn-submit-form');
+            const originalHtml = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Menyimpan Data...';
+
+            try {
+                // Rule 1: Strict paths for public data
+                const targetDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'registrations', documentId);
+                await setDoc(targetDocRef, registrationDoc);
+                
+                // Set as current printing object
+                window.activePrintTarget = registrationDoc;
+
+                // Show success screen
+                formEl.classList.add('hidden');
+                document.getElementById('success-card').classList.remove('hidden');
+                
+                // Populate summary card
+                document.getElementById('res-no').innerText = documentId;
+                document.getElementById('res-nama').innerText = registrationDoc.siswaNama;
+                document.getElementById('res-wali').innerText = registrationDoc.waliAyah;
+
+                showToast("Data pendaftaran berhasil disimpan dan disinkronkan!", "success");
+            } catch (err) {
+                console.error("Gagal mengirim data:", err);
+                showToast("Terjadi kegagalan koneksi saat mengirim formulir. Coba lagi.", "error");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalHtml;
+            }
+        });
+
+        // Helper to grab values cleanly
+        function documentRefine(id) {
+            return document.getElementById(id).value.trim();
+        }
+
+        // Reset wizard layout for registering new students
+        window.resetRegistrationForm = function() {
+            formEl.reset();
+            currentStep = 1;
+            
+            // Clear simulated uploads
+            document.getElementById('kk-status').innerHTML = "Belum ada berkas terpilih";
+            document.getElementById('akta-status').innerHTML = "Belum ada berkas terpilih";
+            document.getElementById('kk_base64_val').value = "";
+            document.getElementById('akta_base64_val').value = "";
+
+            // Hide success screen
+            document.getElementById('success-card').classList.add('hidden');
+            formEl.classList.remove('hidden');
+            
+            // Load step state
+            const stepContents = document.querySelectorAll('.step-content');
+            stepContents.forEach((el, index) => {
+                if (index === 0) el.classList.remove('hidden');
+                else el.classList.add('hidden');
+            });
+
+            updateProgressWizardUI();
+        }
+
+        // Portal Switcher
+        window.switchPortal = function(target) {
+            const portalWali = document.getElementById('portal-wali');
+            const portalAdmin = document.getElementById('portal-admin');
+            const btnWali = document.getElementById('btn-portal-wali');
+            const btnAdmin = document.getElementById('btn-portal-admin');
+
+            if (target === 'wali') {
+                portalWali.classList.remove('hidden');
+                portalAdmin.classList.add('hidden');
+                
+                btnWali.className = "px-4 py-2 rounded-lg text-sm font-semibold bg-emerald-700 text-white hover:bg-emerald-600 transition shadow flex items-center gap-2";
+                btnAdmin.className = "px-4 py-2 rounded-lg text-sm font-semibold bg-amber-500 hover:bg-amber-400 text-slate-900 transition shadow flex items-center gap-2";
+            } else if (target === 'admin') {
+                portalWali.classList.add('hidden');
+                portalAdmin.classList.remove('hidden');
+
+                btnWali.className = "px-4 py-2 rounded-lg text-sm font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition flex items-center gap-2";
+                btnAdmin.className = "px-4 py-2 rounded-lg text-sm font-semibold bg-amber-600 hover:bg-amber-500 text-white transition shadow flex items-center gap-2";
+            }
+        }
+
+        // Open Admin credentials authenticator modal
+        window.openAdminAuth = function() {
+            const modal = document.getElementById('modal-admin-auth');
+            document.getElementById('admin-username-input').value = "";
+            document.getElementById('admin-password-input').value = "";
+            document.getElementById('admin-kodesekolah-input').value = "";
+            modal.classList.remove('pointer-events-none', 'opacity-0');
+            modal.querySelector('div').classList.remove('scale-95');
+        }
+
+        window.closeAdminAuth = function() {
+            const modal = document.getElementById('modal-admin-auth');
+            modal.classList.add('pointer-events-none', 'opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+        }
+
+        // Verify credentials with dynamic loading overlay animation before portal rendering
+        window.verifyAdminCredentials = function() {
+            const usernameInput = document.getElementById('admin-username-input').value.trim();
+            const passwordInput = document.getElementById('admin-password-input').value.trim();
+            const kodeSekolahInput = document.getElementById('admin-kodesekolah-input').value.trim();
+
+            const matchedAdmin = adminAccounts.find(acc => 
+                acc.username === usernameInput && 
+                acc.password === passwordInput && 
+                acc.kodeSekolah === kodeSekolahInput
+            );
+
+            if (matchedAdmin) {
+                closeAdminAuth();
+                
+                // Show Premium Loading Animation Overlay
+                const loader = document.getElementById('loading-overlay');
+                const loaderTitle = document.getElementById('loading-overlay-title');
+                const loaderSub = document.getElementById('loading-overlay-sub');
+
+                loader.classList.remove('pointer-events-none', 'opacity-0');
+                
+                // Sequential animated messages for administrative login experience
+                loaderTitle.innerText = "Memvalidasi Akun...";
+                loaderSub.innerText = `Menghubungkan sesi panitia ${matchedAdmin.username}...`;
+                
+                setTimeout(() => {
+                    loaderTitle.innerText = "Membuka Enkripsi...";
+                    loaderSub.innerText = "Sinkronisasi sertifikat sekolah digital...";
+                }, 1000);
+
+                setTimeout(() => {
+                    loaderTitle.innerText = "Selamat Datang!";
+                    loaderSub.innerText = `Mengalihkan ke dashboard ${matchedAdmin.username}...`;
+                }, 2000);
+
+                setTimeout(() => {
+                    // Hide loader
+                    loader.classList.add('pointer-events-none', 'opacity-0');
+                    
+                    // Assign active profile details
+                    currentActiveAdmin = matchedAdmin;
+                    document.getElementById('active-admin-name').innerText = matchedAdmin.username;
+                    document.getElementById('active-admin-code').innerText = matchedAdmin.kodeSekolah;
+                    document.getElementById('admin-avatar-img').src = matchedAdmin.image;
+
+                    switchPortal('admin');
+                    showToast(`Otentikasi berhasil! Selamat bekerja, ${matchedAdmin.username}.`, "success");
+                }, 3000);
+
+            } else {
+                showToast("Username, Password, atau Kode Sekolah salah. Akses ditolak.", "error");
+            }
+        }
+
+        // Statistics Counter
+        function updateStatistics() {
+            const total = registrationDataList.length;
+            const l = registrationDataList.filter(item => item.siswaJk === "Laki-laki").length;
+            const p = registrationDataList.filter(item => item.siswaJk === "Perempuan").length;
+            const pending = registrationDataList.filter(item => item.status === "Pending").length;
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-l').innerText = l;
+            document.getElementById('stat-p').innerText = p;
+            document.getElementById('stat-pending').innerText = pending;
+        }
+
+        // Process Filters and Render Table Rows
+        window.applyFilters = function() {
+            activeSearchQuery = document.getElementById('admin-search').value.toLowerCase();
+            activeFilterJk = document.getElementById('admin-filter-jk').value;
+            activeFilterStatus = document.getElementById('admin-filter-status').value;
+
+            renderTable();
+        }
+
+        function renderTable() {
+            const tableBody = document.getElementById('table-registrations-body');
+            
+            // Apply filtering in memory
+            const filtered = registrationDataList.filter(item => {
+                const matchSearch = !activeSearchQuery || 
+                    item.siswaNama.toLowerCase().includes(activeSearchQuery) || 
+                    item.regId.toLowerCase().includes(activeSearchQuery) ||
+                    item.waliAyah.toLowerCase().includes(activeSearchQuery) ||
+                    item.waliHp.includes(activeSearchQuery);
+                
+                const matchJk = !activeFilterJk || item.siswaJk === activeFilterJk;
+                const matchStatus = !activeFilterStatus || item.status === activeFilterStatus;
+
+                return matchSearch && matchJk && matchStatus;
+            });
+
+            if (filtered.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-12 text-slate-400">
+                            <div class="flex flex-col items-center space-y-2">
+                                <i class="fa-solid fa-folder-open text-3xl"></i>
+                                <p class="text-xs">Tidak ditemukan data pendaftaran yang sesuai dengan filter.</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tableBody.innerHTML = "";
+            filtered.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition";
+                
+                // Color badges depending on status
+                let statusBadge = '';
+                if (item.status === 'Lengkap') {
+                    statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">Berkas Lengkap</span>';
+                } else if (item.status === 'Perbaikan') {
+                    statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 border border-amber-200">Perbaikan Berkas</span>';
+                } else {
+                    statusBadge = '<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-800 border border-blue-200">Menunggu</span>';
+                }
+
+                // Render short date
+                const formattedDate = new Date(item.createdAt).toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                });
+
+                tr.innerHTML = `
+                    <td class="py-4 px-6 font-bold text-slate-900">${item.regId}</td>
+                    <td class="py-4 px-6">
+                        <div class="font-bold text-slate-800">${item.siswaNama}</div>
+                        <div class="text-xs text-slate-500">${item.siswaJk} | ${item.siswaTempatLahir}</div>
+                    </td>
+                    <td class="py-4 px-6">
+                        <div class="font-medium text-slate-700">${item.waliAyah} (Ayah)</div>
+                        <div class="text-xs text-emerald-800"><i class="fa-brands fa-whatsapp"></i> ${item.waliHp}</div>
+                    </td>
+                    <td class="py-4 px-6 text-xs text-slate-600 font-medium">${formattedDate}</td>
+                    <td class="py-4 px-6 text-center">${statusBadge}</td>
+                    <td class="py-4 px-6 text-center">
+                        <button onclick="openDetailModal('${item.id}')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200 transition flex items-center gap-1 mx-auto">
+                            <i class="fa-solid fa-eye"></i> Detail
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Open Detail Modal
+        window.openDetailModal = function(docId) {
+            selectedDetailDocId = docId;
+            const matched = registrationDataList.find(item => item.id === docId);
+            if (!matched) return;
+
+            populateDetailModal(matched);
+
+            const modal = document.getElementById('modal-detail-siswa');
+            modal.classList.remove('pointer-events-none', 'opacity-0');
+            modal.querySelector('div').classList.remove('scale-95');
+        }
+
+        window.closeDetailModal = function() {
+            selectedDetailDocId = null;
+            const modal = document.getElementById('modal-detail-siswa');
+            modal.classList.add('pointer-events-none', 'opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+        }
+
+        function populateDetailModal(data) {
+            document.getElementById('detail-header-nama').innerText = data.siswaNama;
+            document.getElementById('detail-header-reg').innerText = data.regId;
+            
+            document.getElementById('detail-jk').innerText = data.siswaJk;
+            document.getElementById('detail-ttl').innerText = `${data.siswaTempatLahir}, ${new Date(data.siswaTanggalLahir).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+            document.getElementById('detail-saudara').innerText = `${data.siswaSaudara} orang`;
+
+            document.getElementById('detail-ayah').innerText = data.waliAyah;
+            document.getElementById('detail-pekerjaan-ayah').innerText = data.waliAyahPekerjaan;
+            document.getElementById('detail-ibu').innerText = data.waliIbu;
+            document.getElementById('detail-pekerjaan-ibu').innerText = data.waliIbuPekerjaan;
+            document.getElementById('detail-hp').innerText = data.waliHp;
+            document.getElementById('detail-alamat').innerText = data.waliAlamat;
+
+            // Set file labels in detail card
+            document.getElementById('detail-kk-filename').innerText = data.kkFilename || "kk_image.jpg";
+            document.getElementById('detail-akta-filename').innerText = data.aktaFilename || "akta_image.jpg";
+
+            // Status Badge setup
+            const labelStatus = document.getElementById('detail-label-status');
+            if (data.status === 'Lengkap') {
+                labelStatus.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-100 border border-emerald-200";
+                labelStatus.innerHTML = '<i class="fa-solid fa-circle-check"></i> Status: Berkas Lengkap';
+            } else if (data.status === 'Perbaikan') {
+                labelStatus.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold text-amber-700 bg-amber-100 border border-amber-200";
+                labelStatus.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Status: Perbaikan Berkas';
+            } else {
+                labelStatus.className = "inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold text-blue-700 bg-blue-100 border border-blue-200";
+                labelStatus.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Status: Menunggu Verifikasi';
+            }
+        }
+
+        // Preview document image file (KK / Akta) directly on Admin Panel
+        window.previewFileFromDetails = function(fileType) {
+            if (!selectedDetailDocId) return;
+            const matched = registrationDataList.find(item => item.id === selectedDetailDocId);
+            if (!matched) return;
+
+            const modal = document.getElementById('modal-preview-file');
+            const previewImg = document.getElementById('preview-file-img');
+            const previewTitle = document.getElementById('preview-file-title');
+
+            let base64Source = "";
+            let fileName = "";
+
+            if (fileType === 'kk') {
+                base64Source = matched.kkImageBase64;
+                fileName = matched.kkFilename || "Kartu Keluarga (KK)";
+                previewTitle.innerHTML = `<i class="fa-solid fa-image text-emerald-700"></i> KK: ${fileName}`;
+            } else {
+                base64Source = matched.aktaImageBase64;
+                fileName = matched.aktaFilename || "Akta Kelahiran";
+                previewTitle.innerHTML = `<i class="fa-solid fa-image text-emerald-700"></i> Akta: ${fileName}`;
+            }
+
+            if (!base64Source) {
+                showToast("Berkas gambar tidak ditemukan atau rusak.", "error");
+                return;
+            }
+
+            previewImg.src = base64Source;
+            modal.classList.remove('pointer-events-none', 'opacity-0');
+            modal.querySelector('div').classList.remove('scale-95');
+        }
+
+        window.closePreviewFileModal = function() {
+            const modal = document.getElementById('modal-preview-file');
+            modal.classList.add('pointer-events-none', 'opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+        }
+        // Prepare data inside hidden receipt and trigger direct PDF download
+        window.triggerPrintReceipt = function() {
+            const data = window.activePrintTarget;
+            if (!data) {
+                showToast("Tidak ada data pendaftaran aktif yang terpilih untuk dicetak.", "warning");
+                return;
+            }
+
+            // Populate printable overlay template elements
+            document.getElementById('print-reg-id').innerText = data.regId;
+            document.getElementById('print-siswa-nama').innerText = data.siswaNama;
+            document.getElementById('print-siswa-jk').innerText = data.siswaJk;
+            document.getElementById('print-siswa-ttl').innerText = `${data.siswaTempatLahir}, ${new Date(data.siswaTanggalLahir).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+            document.getElementById('print-siswa-saudara').innerText = `${data.siswaSaudara} Saudara Kandung`;
+            document.getElementById('print-wali-ayah').innerText = data.waliAyah;
+            document.getElementById('print-wali-ayah-pekerjaan').innerText = data.waliAyahPekerjaan;
+            document.getElementById('print-wali-ibu').innerText = data.waliIbu;
+            document.getElementById('print-wali-ibu-pekerjaan').innerText = data.waliIbuPekerjaan;
+            document.getElementById('print-wali-hp').innerText = data.waliHp;
+            document.getElementById('print-wali-alamat').innerText = data.waliAlamat;
+            document.getElementById('print-sign-wali').innerText = `( ${data.waliAyah} )`;
+
+            const today = new Date();
+            document.getElementById('print-current-date').innerText = today.toLocaleDateString('id-ID', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+
+            showToast("Sedang menyiapkan dokumen PDF Anda... Mohon tunggu sebentar.", "success");
+            
+            // Target cetakan
+            const element = document.getElementById('printable-receipt');
+            
+            // Konfigurasi render offscreen agar tidak merusak tampilan layar user
+            element.classList.remove('hidden');
+            element.style.position = 'fixed';
+            element.style.left = '-9999px';
+            element.style.top = '0';
+            element.style.width = '790px'; // Set lebar standar kertas A4/Letter
+            element.style.background = 'white';
+
+            const opt = {
+                margin:       [0.5, 0.5, 0.5, 0.5], // Margin 0.5 inch (sekitar 1.27 cm)
+                filename:     `Bukti_Daftar_Ulang_SDNM05_${data.regId}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, logging: false },
+                jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            // Eksekusi render html ke berkas PDF secara instan
+            html2pdf().set(opt).from(element).save().then(() => {
+                // Kembalikan status elemen ke semula setelah download terpicu
+                element.classList.add('hidden');
+                element.style.position = '';
+                element.style.left = '';
+                element.style.top = '';
+                element.style.width = '';
+                element.style.background = '';
+                showToast("Download PDF berhasil dimulai!", "success");
+            }).catch(err => {
+                console.error("Gagal mendownload PDF: ", err);
+                element.classList.add('hidden');
+                showToast("Gagal mendownload otomatis. Membuka opsi cetak manual...", "warning");
+                // Fallback cetak manual jika pustaka terblokir browser
+                setTimeout(() => {
+                    window.print();
+                }, 300);
+            });
+        }
+
+        // Export to CSV Function for Administrasi
+        window.exportToCSV = function() {
+            if (registrationDataList.length === 0) {
+                showToast("Tidak ada data untuk diekspor.", "warning");
+                return;
+            }
+
+            const headers = [
+                "ID Registrasi", "Nama Siswa", "Jenis Kelamin", 
+                "Tempat Lahir", "Tanggal Lahir", "Ayah Kandung", 
+                "Pekerjaan Ayah", "Ibu Kandung", "Pekerjaan Ibu", "No HP Wali", 
+                "Alamat Lengkap", "Status Berkas", "Tanggal Daftar"
+            ];
+
+            const csvRows = [];
+            csvRows.push(headers.join(","));
+
+            registrationDataList.forEach(item => {
+                const values = [
+                    item.regId,
+                    `"${item.siswaNama.replace(/"/g, '""')}"`,
+                    item.siswaJk,
+                    `"${item.siswaTempatLahir.replace(/"/g, '""')}"`,
+                    item.siswaTanggalLahir,
+                    `"${item.waliAyah.replace(/"/g, '""')}"`,
+                    `"${item.waliAyahPekerjaan.replace(/"/g, '""')}"`,
+                    `"${item.waliIbu.replace(/"/g, '""')}"`,
+                    `"${item.waliIbuPekerjaan.replace(/"/g, '""')}"`,
+                    item.waliHp,
+                    `"${item.waliAlamat.replace(/"/g, '""')}"`,
+                    item.status,
+                    item.createdAt
+                ];
+                csvRows.push(values.join(","));
+            });
+
+            const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\n");
+            const encodedUri = encodeURI(csvContent);
+            
+            const tempLink = document.createElement("a");
+            tempLink.setAttribute("href", encodedUri);
+            tempLink.setAttribute("download", `Data_Daftar_Ulang_SDN_Mujahidin_05_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+            
+            showToast("Berkas CSV berhasil diekspor!", "success");
+        }
+
+        // Beautiful Toast Notifications
+        function showToast(message, type = "success") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let iconClass = 'fa-circle-check text-emerald-600';
+            let bgClass = 'bg-white border-l-4 border-emerald-500';
+            
+            if (type === 'error') {
+                iconClass = 'fa-circle-xmark text-red-600';
+                bgClass = 'bg-white border-l-4 border-red-500';
+            } else if (type === 'warning') {
+                iconClass = 'fa-triangle-exclamation text-amber-600';
+                bgClass = 'bg-white border-l-4 border-amber-500';
+            }
+
+            toast.className = `${bgClass} p-4 rounded-lg shadow-lg flex items-center space-x-3 pointer-events-auto transform transition duration-300 translate-y-2 opacity-0 border`;
+            toast.innerHTML = `
+                <i class="fa-solid ${iconClass} text-lg"></i>
+                <div class="flex-grow text-xs font-semibold text-slate-800 leading-relaxed">${message}</div>
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-sm"></i></button>
+            `;
+
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => { toast.remove(); }, 300);
+            }, 5000);
+        }
+
+        // Initialize application workflow
+        window.onload = async () => {
+            await authenticateUser();
+        }
+    </script>
+</body>
+</html>
